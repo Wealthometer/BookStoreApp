@@ -5,7 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 
 import { useAuthStore } from "../store/authStore";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -19,22 +19,35 @@ export default function RootLayout() {
     "JetBrainsMono-Medium": require("../assets/fonts/JetBrainsMono-Medium.ttf"),
   });
 
-  useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync();
-  }, [fontsLoaded]);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    checkAuth();
+    const doAuthCheck = async () => {
+      await checkAuth();
+      setAuthChecked(true);
+    };
+    doAuthCheck();
   }, []);
 
-  // handle navigation based on the auth state
   useEffect(() => {
+    if (fontsLoaded && authChecked) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, authChecked]);
+
+  // Handle navigation AFTER everything is ready
+  useEffect(() => {
+    if (!authChecked || !fontsLoaded) return; // ⛔ Wait until ready
+
     const inAuthScreen = segments[0] === "(auth)";
     const isSignedIn = user && token;
 
-    if (!isSignedIn && !inAuthScreen) router.replace("/(auth)");
-    else if (isSignedIn && inAuthScreen) router.replace("/(tabs)");
-  }, [user, token, segments]);
+    if (!isSignedIn && !inAuthScreen) {
+      router.replace("/(auth)");
+    } else if (isSignedIn && inAuthScreen) {
+      router.replace("/(tabs)");
+    }
+  }, [authChecked, fontsLoaded, user, token, segments]);
 
   return (
     <SafeAreaProvider>
