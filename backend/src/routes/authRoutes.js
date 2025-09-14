@@ -10,6 +10,7 @@ const generateToken = (userId) => {
 
 router.post("/register", async (req, res) => {
   try {
+
     const { email, username, password } = req.body;
 
     if (!username || !email || !password) {
@@ -59,14 +60,18 @@ router.post("/register", async (req, res) => {
         createdAt: user.createdAt,
       },
     });
+
   } catch (error) {
+    
     console.log("Error in register route", error);
     res.status(500).json({ message: "Internal server error" });
+
   }
 });
 
 router.post("/login", async (req, res) => {
   try {
+    
     const { email, password } = req.body;
 
     if (!email || !password) return res.status(400).json({ message: "All fields are required" });
@@ -90,10 +95,13 @@ router.post("/login", async (req, res) => {
         profileImage: user.profileImage,
         createdAt: user.createdAt,
       },
+    
     });
   } catch (error) {
+    
     console.log("Error in login route", error);
     res.status(500).json({ message: "Internal server error" });
+    
   }
 });
 
