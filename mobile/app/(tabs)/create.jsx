@@ -19,6 +19,9 @@ import { useAuthStore } from "../../store/authStore";
 
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system";
+// ✅ Fix: import EncodingType separately
+import { EncodingType } from "expo-file-system";
+
 import { API_URL } from "../../constants/api";
 
 export default function Create() {
@@ -38,10 +41,14 @@ export default function Create() {
     try {
       // request permission if needed
       if (Platform.OS !== "web") {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        const { status } =
+          await ImagePicker.requestMediaLibraryPermissionsAsync();
 
         if (status !== "granted") {
-          Alert.alert("Permission Denied", "We need camera roll permissions to upload an image");
+          Alert.alert(
+            "Permission Denied",
+            "We need camera roll permissions to upload an image"
+          );
           return;
         }
       }
@@ -64,9 +71,12 @@ export default function Create() {
           setImageBase64(result.assets[0].base64);
         } else {
           // otherwise, convert to base64
-          const base64 = await FileSystem.readAsStringAsync(result.assets[0].uri, {
-            encoding: FileSystem.EncodingType.Base64,
-          });
+          const base64 = await FileSystem.readAsStringAsync(
+            result.assets[0].uri,
+            {
+              encoding: EncodingType.Base64, // ✅ works
+            }
+          );
 
           setImageBase64(base64);
         }
@@ -86,12 +96,7 @@ export default function Create() {
     try {
       setLoading(true);
 
-      // get file extension from URI or default to jpeg
-      const uriParts = image.split(".");
-      const fileType = uriParts[uriParts.length - 1];
-      const imageType = fileType ? `image/${fileType.toLowerCase()}` : "image/jpeg";
-
-      const imageDataUrl = `data:${imageType};base64,${imageBase64}`;
+      const imageDataUrl = `data:image/jpeg;base64,${imageBase64}`;
 
       const response = await fetch(`${API_URL}/books`, {
         method: "POST",
@@ -102,7 +107,7 @@ export default function Create() {
         body: JSON.stringify({
           title,
           caption,
-          rating: rating.toString(),
+          rating: Number(rating), // 👈 FIXED
           image: imageDataUrl,
         }),
       });
@@ -118,7 +123,7 @@ export default function Create() {
       setImageBase64(null);
       router.push("/");
     } catch (error) {
-      console.error("Error creating post:", error);
+      console.error("Error creating post:", error); // check logs here
       Alert.alert("Error", error.message || "Something went wrong");
     } finally {
       setLoading(false);
@@ -129,7 +134,11 @@ export default function Create() {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
       stars.push(
-        <TouchableOpacity key={i} onPress={() => setRating(i)} style={styles.starButton}>
+        <TouchableOpacity
+          key={i}
+          onPress={() => setRating(i)}
+          style={styles.starButton}
+        >
           <Ionicons
             name={i <= rating ? "star" : "star-outline"}
             size={32}
@@ -146,12 +155,17 @@ export default function Create() {
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView contentContainerStyle={styles.container} style={styles.scrollViewStyle}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        style={styles.scrollViewStyle}
+      >
         <View style={styles.card}>
           {/* HEADER */}
           <View style={styles.header}>
             <Text style={styles.title}>Add Book Recommendation</Text>
-            <Text style={styles.subtitle}>Share your favorite reads with others</Text>
+            <Text style={styles.subtitle}>
+              Share your favorite reads with others
+            </Text>
           </View>
 
           <View style={styles.form}>
@@ -189,8 +203,14 @@ export default function Create() {
                   <Image source={{ uri: image }} style={styles.previewImage} />
                 ) : (
                   <View style={styles.placeholderContainer}>
-                    <Ionicons name="image-outline" size={40} color={COLORS.textSecondary} />
-                    <Text style={styles.placeholderText}>Tap to select image</Text>
+                    <Ionicons
+                      name="image-outline"
+                      size={40}
+                      color={COLORS.textSecondary}
+                    />
+                    <Text style={styles.placeholderText}>
+                      Tap to select image
+                    </Text>
                   </View>
                 )}
               </TouchableOpacity>
@@ -209,7 +229,11 @@ export default function Create() {
               />
             </View>
 
-            <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handleSubmit}
+              disabled={loading}
+            >
               {loading ? (
                 <ActivityIndicator color={COLORS.white} />
               ) : (
